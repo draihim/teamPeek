@@ -5,7 +5,7 @@ require 'net/http'
 require 'slim'
 require 'sinatra/reloader' if development?
 Dotenv.load
-$region = 'euw' #this will be a parameter
+$region = 'na' 
 $api_base_address = "https://#{$region}.api.pvp.net"
 API_KEY_SUFFIX = "?api_key=#{ENV['APIKEY']}"
 
@@ -18,8 +18,10 @@ helpers do
         info = JSON.parse(Net::HTTP.get(URI.parse(URI.encode("https://#{$region}.api.pvp.net/api/lol/#{$region}/v1.4/summoner/by-name/#{names}" + API_KEY_SUFFIX))))
     end
 
-    def get_summoner_league(summoner_id)
-        result = JSON.parse(Net::HTTP.get(URI.parse(URI.encode("https://#{$region}.api.pvp.net/api/lol/#{$region}/v2.5/league/by-summoner/#{summoner_id}/entry" + API_KEY_SUFFIX))))
+    def get_summoners_league_info(ids)
+        path = "https://#{$region}.api.pvp.net/api/lol/#{$region}/v2.5/league/by-summoner/#{ids}/entry" + API_KEY_SUFFIX
+        puts path
+        result =JSON.parse(Net::HTTP.get(URI.parse(URI.encode(path))))
     end
 
     def get_summoner_summary(summoner_id)
@@ -52,7 +54,6 @@ helpers do
 
     def parse_names_from_params(chatlog, manual)
         names = []
-        puts "dupa"
         #TODO: think about recombining into one regexp
         names += chatlog.scan(/([A-Za-z0-9 ]+) joined the room/)
         chatlog.lines.each { |l| names << l.scan(/^([A-Za-z0-9 ]+):/) }
@@ -65,25 +66,20 @@ get '/' do
     slim :home
 end
 post '/' do
-    puts params
     $region = params['region']
-    puts $api_base_address
     redirect '/' unless params['chatlog'] !="" || params['manualEntry'] != ""
     team = parse_names_from_params(params['chatlog'], params['manualEntry'])
-    puts '----------'
-    puts team
-    puts '----------'
     @summoner_info = {}
     id_info = get_summoner_info(team.join(", "))
-    puts id_info
+    league_info = get_summoners_league_info(id_info.values.map{|i| i['id']}.join(", "))
+    puts league_info
     team.each do |tm|
         id = id_info[tm.downcase.gsub(' ', '')]['id']
         @summoner_info[id] = {}
         @summoner_info[id]['name'] = tm
         # @summoner_info[id]['match_history'] = get_match_history(id)
-        # puts " getting match history time: #{Time.now - start}"
         @summoner_info[id]['summary'] = get_stat_summary_for_ranked(get_summoner_summary(id))
+        @summoner_info[id]['leagues'] = league_info[id.to_s]
     end
-        # @summoner_info[id]['league_info'] = get_summoner_league(id)# todo:refractor in a way that this returns actual league info for one summoner
     slim :dream_team
 end
