@@ -5,29 +5,29 @@ require 'net/http'
 require 'slim'
 require 'sinatra/reloader' if development?
 Dotenv.load
-REGION = 'euw' #this will be a parameter
-API_BASE_ADDRESS = "https://#{REGION}.api.pvp.net"
+$region = 'euw' #this will be a parameter
+$api_base_address = "https://#{$region}.api.pvp.net"
 API_KEY_SUFFIX = "?api_key=#{ENV['APIKEY']}"
 
 set :environment, :development
 helpers do
     def get_champion_name(id)
-        result = JSON.parse(Net::HTTP.get(URI.parse(URI.encode("https://global.api.pvp.net/api/lol/static-data/#{REGION}/v1.2/champion/#{id}"+ API_KEY_SUFFIX))))['name']
+        result = JSON.parse(Net::HTTP.get(URI.parse(URI.encode("https://global.api.pvp.net/api/lol/static-data/#{$region}/v1.2/champion/#{id}"+ API_KEY_SUFFIX))))['name']
     end
     def get_summoner_info(names)
-        info = JSON.parse(Net::HTTP.get(URI.parse(URI.encode(API_BASE_ADDRESS + "/api/lol/#{REGION}/v1.4/summoner/by-name/#{names}" + API_KEY_SUFFIX))))
+        info = JSON.parse(Net::HTTP.get(URI.parse(URI.encode("https://#{$region}.api.pvp.net/api/lol/#{$region}/v1.4/summoner/by-name/#{names}" + API_KEY_SUFFIX))))
     end
 
     def get_summoner_league(summoner_id)
-        result = JSON.parse(Net::HTTP.get(URI.parse(URI.encode(API_BASE_ADDRESS + "/api/lol/#{REGION}/v2.5/league/by-summoner/#{summoner_id}/entry" + API_KEY_SUFFIX))))
+        result = JSON.parse(Net::HTTP.get(URI.parse(URI.encode("https://#{$region}.api.pvp.net/api/lol/#{$region}/v2.5/league/by-summoner/#{summoner_id}/entry" + API_KEY_SUFFIX))))
     end
 
     def get_summoner_summary(summoner_id)
-        result = JSON.parse(Net::HTTP.get(URI.parse(URI.encode(API_BASE_ADDRESS + "/api/lol/#{REGION}/v1.3/stats/by-summoner/#{summoner_id}/summary" + API_KEY_SUFFIX))))
+        result = JSON.parse(Net::HTTP.get(URI.parse(URI.encode("https://#{$region}.api.pvp.net/api/lol/#{$region}/v1.3/stats/by-summoner/#{summoner_id}/summary" + API_KEY_SUFFIX))))
     end
 
     def get_match_history(summoner_id)
-        matchhistory = JSON.parse(Net::HTTP.get(URI.parse(URI.encode(API_BASE_ADDRESS + "/api/lol/#{REGION}/v2.2/matchhistory/#{summoner_id}" + API_KEY_SUFFIX))))
+        matchhistory = JSON.parse(Net::HTTP.get(URI.parse(URI.encode("https://#{$region}.api.pvp.net/api/lol/#{$region}/v2.2/matchhistory/#{summoner_id}" + API_KEY_SUFFIX))))
         matches =  matchhistory.values[0]
         clear_match = []
         matches.each do |match|
@@ -56,8 +56,8 @@ helpers do
         #TODO: think about recombining into one regexp
         names += chatlog.scan(/([A-Za-z0-9 ]+) joined the room/)
         chatlog.lines.each { |l| names << l.scan(/^([A-Za-z0-9 ]+):/) }
-        names += manual.split(",")
-        return names.flatten.uniq
+        names += manual.split(",").map(&:chomp)
+        return names.flatten.uniq.to_ary
     end
 
 end
@@ -66,11 +66,16 @@ get '/' do
 end
 post '/' do
     puts params
+    $region = params['region']
+    puts $api_base_address
     redirect '/' unless params['chatlog'] !="" || params['manualEntry'] != ""
     team = parse_names_from_params(params['chatlog'], params['manualEntry'])
+    puts '----------'
+    puts team
+    puts '----------'
     @summoner_info = {}
     id_info = get_summoner_info(team.join(", "))
-    # todo: incorporate this into one loop. after getting id info from names jus disregard them, getting the name you need from id_info
+    puts id_info
     team.each do |tm|
         id = id_info[tm.downcase.gsub(' ', '')]['id']
         @summoner_info[id] = {}
