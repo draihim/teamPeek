@@ -9,7 +9,7 @@ REGION = 'euw' #this will be a parameter
 API_BASE_ADDRESS = "https://#{REGION}.api.pvp.net"
 API_KEY_SUFFIX = "?api_key=#{ENV['APIKEY']}"
 
-
+set :environment, :development
 helpers do
     def get_champion_name(id)
         result = JSON.parse(Net::HTTP.get(URI.parse(URI.encode("https://global.api.pvp.net/api/lol/static-data/#{REGION}/v1.2/champion/#{id}"+ API_KEY_SUFFIX))))['name']
@@ -50,12 +50,13 @@ helpers do
         res << data[dupa2].select{|k,v| ['wins'].include?(k)} if dupa2
     end
 
-    def parse_names_from_chatlog(chatlog)
+    def parse_names_from_params(chatlog, manual)
         names = []
         puts "dupa"
         #TODO: think about recombining into one regexp
         names += chatlog.scan(/([A-Za-z0-9 ]+) joined the room/)
         chatlog.lines.each { |l| names << l.scan(/^([A-Za-z0-9 ]+):/) }
+        names += manual.split(",")
         return names.flatten.uniq
     end
 
@@ -64,9 +65,9 @@ get '/' do
     slim :home
 end
 post '/' do
-    start = Time.now
-    team = parse_names_from_chatlog(params['chatlog'])
-    puts "parsing names time: #{Time.now - start}"
+    puts params
+    redirect '/' unless params['chatlog'] !="" || params['manualEntry'] != ""
+    team = parse_names_from_params(params['chatlog'], params['manualEntry'])
     @summoner_info = {}
     id_info = get_summoner_info(team.join(", "))
     # todo: incorporate this into one loop. after getting id info from names jus disregard them, getting the name you need from id_info
