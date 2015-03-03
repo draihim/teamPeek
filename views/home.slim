@@ -1,8 +1,13 @@
-h1 class="cover-heading" Just paste the chatlog here and pray to God they're all here 
+h1 class="cover-heading" Just paste the chatlog and pray they're all here 
 form action="/" method="post"
-    center
-    textarea name="chatlog" rows="15" cols="60" autofocus="true" class="chatarea"
+  center
+  textarea name="chatlog" rows="15" cols="60" autofocus="true" class="chatarea form-control"
+  br
+  div class="form-group"
+    label for="manualEntry" ...or just type them here
     br
-    input type="submit" value="Take me to the results" class="btn btn-default" data-loading-text="Loading..." 
+    input type="text" class="form-control chatarea" id="manualEntry" placeholder="Me, Not Me, Totally Not Me, My Smurf" 
+  br
+  input type="submit" value="Take me to the results" class="btn btn-default" data-loading-text="Loading..." 
 
 
