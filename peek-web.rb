@@ -5,6 +5,9 @@ require 'net/http'
 require 'slim'
 require 'sinatra/reloader' if development?
 Dotenv.load
+settings do
+    set :development
+end
 $region = 'na' 
 $api_base_address = "https://#{$region}.api.pvp.net"
 API_KEY_SUFFIX = "?api_key=#{ENV['APIKEY']}"
@@ -25,8 +28,7 @@ helpers do
     end
 
     def get_summoner_summary(summoner_id)
-        result = JSON.parse(Net::HTTP.get(URI.parse(URI.encode("https://#{$region}.api.pvp.net/api/lol/#{$region}/v1.3/stats/by-summoner/#{summoner_id}/summary" + API_KEY_SUFFIX))))
-    end
+           end
 
     def get_match_history(summoner_id)
         matchhistory = JSON.parse(Net::HTTP.get(URI.parse(URI.encode("https://#{$region}.api.pvp.net/api/lol/#{$region}/v2.2/matchhistory/#{summoner_id}" + API_KEY_SUFFIX))))
@@ -43,13 +45,15 @@ helpers do
         end
         clear_match
     end
-    def get_stat_summary_for_ranked(summary)
-        res = []
+    def get_stat_summary(summoner_id)
+        summary = JSON.parse(Net::HTTP.get(URI.parse(URI.encode("https://#{$region}.api.pvp.net/api/lol/#{$region}/v1.3/stats/by-summoner/#{summoner_id}/summary" + API_KEY_SUFFIX))))
+        res = {} 
         data = summary['playerStatSummaries']
         dupa = data.index{|c| c['playerStatSummaryType']=='RankedSolo5x5'}
         dupa2 = data.index{|c| c['playerStatSummaryType']=='Unranked'}
-        res << data[dupa].select {|k,v| ['wins', 'losses'].include?(k)} if dupa
-        res << data[dupa2].select{|k,v| ['wins'].include?(k)} if dupa2
+        res['rankedStats'] = data[dupa].select {|k,v| ['wins', 'losses'].include?(k)} if dupa
+        res['normalStats'] = data[dupa2].select{|k,v| ['wins'].include?(k)} if dupa2
+        res
     end
 
     def parse_names_from_params(chatlog, manual)
@@ -59,6 +63,16 @@ helpers do
         chatlog.lines.each { |l| names << l.scan(/^([A-Za-z0-9 ]+):/) }
         names += manual.split(",").map(&:chomp)
         return names.flatten.uniq.to_ary
+    end
+    def parse_league_info(league_info_for_summoner)
+        res = {}
+        stat = league_info_for_summoner
+        idx_5x5_solo = stat.index {|c| c['queue']=="RANKED_SOLO_5x5"}
+        idx_5x5_team = stat.index {|c| c['queue']=="RANKED_TEAM_5x5"}
+        res["rankedSoloLeague"] = stat[idx_5x5_solo].select {|k,v| ['tier', 'entries'].include?(k)} if idx_5x5_solo
+        res["rankedTeamLeague"] = stat[idx_5x5_team].select{|k,v| ['tier', 'entries'].include?(k)} if idx_5x5_team
+
+        res
     end
 
 end
@@ -78,8 +92,8 @@ post '/' do
         @summoner_info[id] = {}
         @summoner_info[id]['name'] = tm
         # @summoner_info[id]['match_history'] = get_match_history(id)
-        @summoner_info[id]['summary'] = get_stat_summary_for_ranked(get_summoner_summary(id))
-        @summoner_info[id]['leagues'] = league_info[id.to_s]
+        @summoner_info[id]['summary'] = get_stat_summary(id)
+        @summoner_info[id]['leagues'] = parse_league_info(league_info[id.to_s])
     end
     slim :dream_team
 end
