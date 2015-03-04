@@ -5,9 +5,6 @@ require 'net/http'
 require 'slim'
 require 'sinatra/reloader' if development?
 Dotenv.load
-settings do
-    set :development
-end
 $region = 'na' 
 $api_base_address = "https://#{$region}.api.pvp.net"
 API_KEY_SUFFIX = "?api_key=#{ENV['APIKEY']}"
