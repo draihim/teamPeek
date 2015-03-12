@@ -1,15 +1,20 @@
 center
+  section 
+  - flash.each do | k, v |
+    div class="bg-danger" =v
+
   table class = "table table-hover"
     thead
       th Name
       th Tier
       th Ranked W : L
       th Normal Wins
+      /th Math History (Summary)
     tbody
     - for summoner, data in @summoner_info do
       tr
-        td.name =data["name"]
-        td.tier = data["leagues"]["rankedSoloLeague"] ? "#{data["leagues"]["rankedSoloLeague"]["tier"].capitalize} #{data["leagues"]["rankedSoloLeague"]["entries"][0]["division"]}" : "Unranked"
-        td.r_summary ="#{data["summary"]["rankedStats"]["wins"]} : #{data["summary"]["rankedStats"]["losses"]}"
-        td.n_wins =data["summary"]["normalStats"]["wins"]
-
+        td.name = data["name"]
+        td.tier = data["tier"]
+        td.r_summary = data["rankedwl"]
+        td.n_wins =data["normalWins"]
+        /td.history =data["match_history"]

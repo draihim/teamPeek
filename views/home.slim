@@ -1,6 +1,8 @@
 h1 class="cover-heading" Just paste the chatlog and pray they're all here 
-form action="/" method="post"
-  center
+section 
+  - flash.each do | k, v |
+    div class="bg-danger" =v
+form action="/results" method="post"
   textarea name="chatlog" rows="15" cols="60" autofocus="true" class="chatarea form-control"
   br
   label for="manualEntry" ...or just type them here

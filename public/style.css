@@ -1,7 +1,3 @@
-/*
- * Globals
- */
-/* Links */
 a,
 a:focus,
 a:hover {
@@ -99,3 +95,10 @@ body {
     width: 700px;
   }
 }
+div.dupa {
+    border: 2px solid;
+    border-radius: 25px;
+    border-color: red;
+    background-color: 2550255;
+}
+
