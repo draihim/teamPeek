@@ -9,8 +9,6 @@ Dotenv.load
 enable :sessions
 $api_base_address = "https://#{$region}.api.pvp.net"
 API_KEY_SUFFIX = "?api_key=#{ENV['APIKEY']}"
-
-set :environment, :development
 helpers do
     def get_champion_name(id)
         result = JSON.parse(Net::HTTP.get(URI.parse(URI.encode("https://global.api.pvp.net/api/lol/static-data/#{$region}/v1.2/champion/#{id}"+ API_KEY_SUFFIX))))['name']
